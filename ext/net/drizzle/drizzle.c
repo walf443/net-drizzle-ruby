@@ -4,6 +4,7 @@
 static void rb_drizzle_free(net_drizzle_st *context)
 {
     drizzle_free(context->drizzle);
+    context->drizzle = NULL;
     ruby_xfree(context);
 }
 
@@ -113,6 +114,42 @@ VALUE rb_drizzle_con_set_tcp(VALUE self, VALUE host, VALUE port)
     return self;
 }
 
+static void rb_drizzle_query_free(net_drizzle_query_st *query)
+{
+    if ( query->query != NULL ) {
+        // FIXME: drizzle_free also free query memory. So rely it.
+        // drizzle_query_free(query->query);
+        query->query = NULL;
+    }
+    ruby_xfree(query);
+}
+
+static VALUE rb_drizzle_query_alloc(VALUE klass)
+{
+    VALUE self;
+    net_drizzle_query_st *context;
+    self = Data_Make_Struct(klass, net_drizzle_query_st, 0, rb_drizzle_query_free, context);
+
+    return self;
+}
+
+VALUE rb_drizzle_query_initialize(VALUE self, VALUE rb_cDrizzle)
+{
+    net_drizzle_query_st *context;
+    net_drizzle_st *dri_st;
+    drizzle_query_st *query;
+
+    Data_Get_Struct(self, net_drizzle_query_st, context);
+    Data_Get_Struct(rb_cDrizzle, net_drizzle_st, dri_st);
+
+    query = NULL;
+    if ( ( context->query = drizzle_query_create(dri_st->drizzle, query) ) == NULL ) {
+        rb_sys_fail("Failed to alloc drizzle_query_create.");
+    }
+
+    return self;
+}
+
 void Init_drizzle()
 {
     VALUE mNet = rb_define_module("Net");
@@ -138,5 +175,9 @@ void Init_drizzle()
     rb_define_const(mOptions, "READY", INT2FIX(DRIZZLE_CON_READY));
     rb_define_const(mOptions, "NO_RESULT_READ", INT2FIX(DRIZZLE_CON_NO_RESULT_READ));
     rb_define_const(mOptions, "IO_READY", INT2FIX(DRIZZLE_CON_IO_READY));
+
+    VALUE cQuery = rb_define_class_under(cDrizzle, "Query", rb_cObject);
+    rb_define_alloc_func(cQuery, rb_drizzle_query_alloc);
+    rb_define_method(cQuery, "initialize", rb_drizzle_query_initialize, 1);
 }
 
