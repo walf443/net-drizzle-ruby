@@ -1,5 +1,18 @@
 #include <ruby.h>
+#ifdef RUBY_RUBY_H
+    #include <ruby/encoding.h>
+#endif
+
 #include "drizzle.h"
+
+VALUE rb_utf8_str_new(const char *str, long len)
+{
+#ifdef RUBY_ENCODING_H
+    return rb_enc_str_new(str, len, rb_enc_find("UTF-8"));
+#else
+    return rb_str_new(str, len);
+#endif
+}
 
 static void rb_drizzle_free(net_drizzle_st *context)
 {
@@ -242,7 +255,8 @@ VALUE rb_drizzle_query_row_next(VALUE self)
     int i;
     for( i = 0; i < cnt; i++ ) {
         if ( row[i] ) {
-            rb_ary_push(result, rb_str_new2(row[i]));
+            // FIXME: hmm. it may not be "UTF-8" string.
+            rb_ary_push(result, rb_utf8_str_new(row[i], strlen(row[i])));
         } else {
             rb_ary_push(result, Qnil);
         }
