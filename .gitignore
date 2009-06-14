@@ -1,0 +1,4 @@
+*.bundle
+*.o
+*.log
+Makefile
