@@ -35,7 +35,12 @@ VALUE rb_drizzle_con_create(VALUE self)
 static void rb_drizzle_con_free(net_drizzle_con_st *context)
 {
     if ( context->con != NULL ) {
-        drizzle_con_free(context->con);
+        // conn may be free by drizzle_free.
+        if ( context->con->drizzle != NULL ) {
+            // FIXME: drizzle_free also free connection memory. So rely it.
+            // drizzle_con_free(context->con);
+        }
+        context->con = NULL;
     }
 
     ruby_xfree(context);
