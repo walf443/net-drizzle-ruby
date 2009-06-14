@@ -126,7 +126,7 @@ VALUE rb_drizzle_con_set_tcp(VALUE self, VALUE host, VALUE port)
     return self;
 }
 
-VALUE rb_drizzle_con_add_query(VALUE self, VALUE query_str)
+VALUE rb_drizzle_con_query_add(VALUE self, VALUE query_str)
 {
     net_drizzle_con_st *context;
     Data_Get_Struct(self, net_drizzle_con_st, context);
@@ -267,7 +267,7 @@ void Init_drizzle()
     rb_define_method(cConnection, "host", rb_drizzle_con_host, 0);
     rb_define_method(cConnection, "port", rb_drizzle_con_port, 0);
     rb_define_method(cConnection, "set_tcp", rb_drizzle_con_set_tcp, 2);
-    rb_define_method(cConnection, "add_query", rb_drizzle_con_add_query, 1);
+    rb_define_method(cConnection, "query_add", rb_drizzle_con_query_add, 1);
 
     VALUE mOptions = rb_define_module_under(cConnection, "Options");
     rb_define_const(mOptions, "NONE", INT2FIX(DRIZZLE_CON_NONE));
