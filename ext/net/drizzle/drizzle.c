@@ -207,6 +207,50 @@ VALUE rb_drizzle_query_set_con(VALUE self, VALUE con)
     return self;
 }
 
+VALUE rb_drizzle_query_error_code(VALUE self)
+{
+    net_drizzle_query_st *context;
+    Data_Get_Struct(self, net_drizzle_query_st, context);
+    int ret;
+
+    if ( context->query->result == NULL ) {
+        // hmm. It should raise some Exception?
+        return Qnil;
+    }
+
+    ret = drizzle_result_error_code(context->query->result);
+    return INT2FIX(ret);
+}
+
+VALUE rb_drizzle_query_row_next(VALUE self)
+{
+    net_drizzle_query_st *context;
+    Data_Get_Struct(self, net_drizzle_query_st, context);
+
+    if ( context->query->result == NULL ) {
+        // hmm. It should raise some Exception?
+        return Qnil;
+    }
+
+    drizzle_row_t row = drizzle_row_next(context->query->result);
+    if ( row == NULL ) {
+        return Qnil;
+    }
+
+    uint16_t cnt = drizzle_result_column_count(context->query->result);
+    VALUE result = rb_ary_new2(cnt);
+    int i;
+    for( i = 0; i < cnt; i++ ) {
+        if ( row[i] ) {
+            rb_ary_push(result, rb_str_new2(row[i]));
+        } else {
+            rb_ary_push(result, Qnil);
+        }
+    }
+
+    return result;
+}
+
 void Init_drizzle()
 {
     VALUE mNet = rb_define_module("Net");
@@ -239,5 +283,8 @@ void Init_drizzle()
     rb_define_alloc_func(cQuery, rb_drizzle_query_alloc);
     rb_define_method(cQuery, "initialize", rb_drizzle_query_initialize, 1);
     rb_define_method(cQuery, "set_con", rb_drizzle_query_set_con, 1);
+    rb_define_method(cQuery, "error_code", rb_drizzle_query_error_code, 0);
+    rb_define_method(cQuery, "row_next", rb_drizzle_query_row_next, 0);
+
 }
 
