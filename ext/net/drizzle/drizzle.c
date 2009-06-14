@@ -78,6 +78,15 @@ VALUE rb_drizzle_con_add_options(VALUE self, VALUE options)
     return self;
 }
 
+VALUE rb_drizzle_con_set_db(VALUE self, VALUE database)
+{
+    net_drizzle_con_st *context;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+    drizzle_con_set_db(context->con, RSTRING_PTR(database));
+
+    return self;
+}
+
 void Init_drizzle()
 {
     VALUE mNet = rb_define_module("Net");
@@ -89,6 +98,7 @@ void Init_drizzle()
     rb_define_alloc_func(cConnection, rb_drizzle_con_alloc);
     rb_define_method(cConnection, "initialize", rb_drizzle_con_initialize, 1);
     rb_define_method(cConnection, "add_options", rb_drizzle_con_add_options, 1);
+    rb_define_method(cConnection, "set_db", rb_drizzle_con_set_db, 1);
 
     VALUE mOptions = rb_define_module_under(cConnection, "Options");
     rb_define_const(mOptions, "NONE", INT2FIX(DRIZZLE_CON_NONE));
