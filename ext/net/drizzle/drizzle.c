@@ -87,6 +87,32 @@ VALUE rb_drizzle_con_set_db(VALUE self, VALUE database)
     return self;
 }
 
+VALUE rb_drizzle_con_host(VALUE self)
+{
+    net_drizzle_con_st *context;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+
+    return rb_str_new2(drizzle_con_host(context->con));
+}
+
+VALUE rb_drizzle_con_port(VALUE self)
+{
+    net_drizzle_con_st *context;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+
+    return INT2FIX(drizzle_con_port(context->con));
+}
+
+VALUE rb_drizzle_con_set_tcp(VALUE self, VALUE host, VALUE port)
+{
+    net_drizzle_con_st *context;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+
+    drizzle_con_set_tcp(context->con, RSTRING_PTR(host), FIX2INT(port));
+
+    return self;
+}
+
 void Init_drizzle()
 {
     VALUE mNet = rb_define_module("Net");
@@ -99,6 +125,9 @@ void Init_drizzle()
     rb_define_method(cConnection, "initialize", rb_drizzle_con_initialize, 1);
     rb_define_method(cConnection, "add_options", rb_drizzle_con_add_options, 1);
     rb_define_method(cConnection, "set_db", rb_drizzle_con_set_db, 1);
+    rb_define_method(cConnection, "host", rb_drizzle_con_host, 0);
+    rb_define_method(cConnection, "port", rb_drizzle_con_port, 0);
+    rb_define_method(cConnection, "set_tcp", rb_drizzle_con_set_tcp, 2);
 
     VALUE mOptions = rb_define_module_under(cConnection, "Options");
     rb_define_const(mOptions, "NONE", INT2FIX(DRIZZLE_CON_NONE));
