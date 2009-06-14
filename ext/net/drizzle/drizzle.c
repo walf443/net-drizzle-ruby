@@ -69,6 +69,15 @@ VALUE rb_drizzle_con_initialize(VALUE self, VALUE rb_cDrizzle)
     return self;
 }
 
+VALUE rb_drizzle_con_add_options(VALUE self, VALUE options)
+{
+    net_drizzle_con_st *context;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+    drizzle_con_add_options(context->con, FIX2INT(options));
+
+    return self;
+}
+
 void Init_drizzle()
 {
     VALUE mNet = rb_define_module("Net");
@@ -79,5 +88,16 @@ void Init_drizzle()
     VALUE cConnection = rb_define_class_under(cDrizzle, "Connection", rb_cObject);
     rb_define_alloc_func(cConnection, rb_drizzle_con_alloc);
     rb_define_method(cConnection, "initialize", rb_drizzle_con_initialize, 1);
+    rb_define_method(cConnection, "add_options", rb_drizzle_con_add_options, 1);
+
+    VALUE mOptions = rb_define_module_under(cConnection, "Options");
+    rb_define_const(mOptions, "NONE", INT2FIX(DRIZZLE_CON_NONE));
+    rb_define_const(mOptions, "ALLOCATED", INT2FIX(DRIZZLE_CON_ALLOCATED));
+    rb_define_const(mOptions, "MYSQL", INT2FIX((DRIZZLE_CON_MYSQL)));
+    rb_define_const(mOptions, "RAW_PACKET", INT2FIX(DRIZZLE_CON_RAW_PACKET));
+    rb_define_const(mOptions, "RAW_SCRAMBLE", INT2FIX(DRIZZLE_CON_RAW_SCRAMBLE));
+    rb_define_const(mOptions, "READY", INT2FIX(DRIZZLE_CON_READY));
+    rb_define_const(mOptions, "NO_RESULT_READ", INT2FIX(DRIZZLE_CON_NO_RESULT_READ));
+    rb_define_const(mOptions, "IO_READY", INT2FIX(DRIZZLE_CON_IO_READY));
 }
 
