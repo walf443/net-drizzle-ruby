@@ -33,6 +33,16 @@ VALUE rb_drizzle_con_create(VALUE self)
     return rb_funcall(cConnection, rb_intern("new"), 1, self);
 }
 
+VALUE rb_drizzle_query_run_all(VALUE self)
+{
+    net_drizzle_st* context;
+    Data_Get_Struct(self, net_drizzle_st, context);
+
+    int ret = drizzle_query_run_all(context->drizzle);
+
+    return INT2FIX(ret);
+}
+
 static void rb_drizzle_con_free(net_drizzle_con_st *context)
 {
     if ( context->con != NULL ) {
@@ -123,10 +133,11 @@ VALUE rb_drizzle_con_add_query(VALUE self, VALUE query_str)
     VALUE mNet = rb_const_get(rb_cObject, rb_intern("Net")); 
     VALUE cDrizzle = rb_const_get(mNet, rb_intern("Drizzle")); 
     VALUE cQuery = rb_const_get(cDrizzle, rb_intern("Query"));
-    VALUE rb_query = rb_funcall(cQuery, rb_intern("new"), 1, rb_ivar_get(self, rb_intern("@drizzle")));
+    VALUE rb_query = rb_funcall(cQuery, rb_intern("allocate"), 0);
 
     net_drizzle_query_st *query;
     Data_Get_Struct(rb_query, net_drizzle_query_st, query);
+    query->query = NULL;
     drizzle_result_st *result = NULL;
     drizzle_query_st *ret;
     ret = drizzle_query_add(
@@ -202,6 +213,7 @@ void Init_drizzle()
     VALUE cDrizzle = rb_define_class_under(mNet, "Drizzle", rb_cObject);
     rb_define_alloc_func(cDrizzle, rb_drizzle_alloc);
     rb_define_method(cDrizzle, "con_create", rb_drizzle_con_create, 0);
+    rb_define_method(cDrizzle, "query_run_all", rb_drizzle_query_run_all, 0);
 
     VALUE cConnection = rb_define_class_under(cDrizzle, "Connection", rb_cObject);
     rb_define_alloc_func(cConnection, rb_drizzle_con_alloc);
