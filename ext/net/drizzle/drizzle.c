@@ -67,6 +67,8 @@ VALUE rb_drizzle_con_initialize(VALUE self, VALUE rb_cDrizzle)
         rb_sys_fail("Failed to alloc drizzle_con_create.");
     }
 
+    rb_ivar_set(self, rb_intern("@drizzle"), rb_cDrizzle);
+
     return self;
 }
 
@@ -114,6 +116,38 @@ VALUE rb_drizzle_con_set_tcp(VALUE self, VALUE host, VALUE port)
     return self;
 }
 
+VALUE rb_drizzle_con_add_query(VALUE self, VALUE query_str)
+{
+    net_drizzle_con_st *context;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+    VALUE mNet = rb_const_get(rb_cObject, rb_intern("Net")); 
+    VALUE cDrizzle = rb_const_get(mNet, rb_intern("Drizzle")); 
+    VALUE cQuery = rb_const_get(cDrizzle, rb_intern("Query"));
+    VALUE rb_query = rb_funcall(cQuery, rb_intern("new"), 1, rb_ivar_get(self, rb_intern("@drizzle")));
+
+    net_drizzle_query_st *query;
+    Data_Get_Struct(rb_query, net_drizzle_query_st, query);
+    drizzle_result_st *result = NULL;
+    drizzle_query_st *ret;
+    ret = drizzle_query_add(
+        context->con->drizzle, 
+        query->query, 
+        context->con, 
+        result, 
+        RSTRING_PTR(query_str), 
+        RSTRING_LEN(query_str),
+        (drizzle_query_options_t)0,
+        NULL
+    );
+    if ( ret == NULL ) {
+        rb_sys_fail("failed to create query instance.");
+    }
+    query->query = ret;
+
+    return rb_query;
+
+}
+
 static void rb_drizzle_query_free(net_drizzle_query_st *query)
 {
     if ( query->query != NULL ) {
@@ -150,6 +184,18 @@ VALUE rb_drizzle_query_initialize(VALUE self, VALUE rb_cDrizzle)
     return self;
 }
 
+VALUE rb_drizzle_query_set_con(VALUE self, VALUE con)
+{
+    net_drizzle_query_st *context;
+    net_drizzle_con_st *conn_st;
+    Data_Get_Struct(self, net_drizzle_query_st, context);
+    Data_Get_Struct(con, net_drizzle_con_st, conn_st);
+
+    drizzle_query_set_con(context->query, conn_st->con);
+
+    return self;
+}
+
 void Init_drizzle()
 {
     VALUE mNet = rb_define_module("Net");
@@ -165,6 +211,7 @@ void Init_drizzle()
     rb_define_method(cConnection, "host", rb_drizzle_con_host, 0);
     rb_define_method(cConnection, "port", rb_drizzle_con_port, 0);
     rb_define_method(cConnection, "set_tcp", rb_drizzle_con_set_tcp, 2);
+    rb_define_method(cConnection, "add_query", rb_drizzle_con_add_query, 1);
 
     VALUE mOptions = rb_define_module_under(cConnection, "Options");
     rb_define_const(mOptions, "NONE", INT2FIX(DRIZZLE_CON_NONE));
@@ -179,5 +226,6 @@ void Init_drizzle()
     VALUE cQuery = rb_define_class_under(cDrizzle, "Query", rb_cObject);
     rb_define_alloc_func(cQuery, rb_drizzle_query_alloc);
     rb_define_method(cQuery, "initialize", rb_drizzle_query_initialize, 1);
+    rb_define_method(cQuery, "set_con", rb_drizzle_query_set_con, 1);
 }
 
