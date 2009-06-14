@@ -1,0 +1,53 @@
+= net-drizzle
+ruby binding for libdrizzle.
+
+== EXAMPLE
+
+    require 'net/drizzle/drizzle'
+    
+    dr = Net::Drizzle.new
+    con1 = dr.con_create
+    
+    con1.add_options(Net::Drizzle::Connection::Options::MYSQL)
+    con1.set_db('information_schema')
+    
+    querys = []
+    2.times do |c|
+        10.times do |i|
+            con = con1.clone
+            querys << con.query_add("SELECT * FROM tables;")
+        end
+    
+        dr.query_run_all
+        querys.each do |q|
+    
+            p q
+            dr.query_run_all
+            if q.error_code != 0
+                warn q.error_code.inspect
+            end
+            while row = q.row_next
+                p row
+            end
+        end
+    end
+
+== Description
+ruby binding for libdrizzle.
+
+== Features/Problems
+
+THIS PROJECT IS EARLY DEVELOPMENT. DO NOT USE PRODUCT.
+free memorys in drizzle's free. So take care memory leak.
+
+== SEE ALSO
+
+libdrizzle: https://code.launchpad.net/libdrizzle
+p5-net-drizzle: https://github.com/tokuhirom/p5-net-drizzle/tree
+
+== Copyright
+
+Author::    Keiji, Yoshimi <walf443 at gmail.com>
+Copyright:: Copyright (c) 2008 Keiji, Yoshimi
+License:: you can redistribute it and/or modify it under the same terms as Ruby itself.
+
