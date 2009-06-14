@@ -172,6 +172,25 @@ VALUE rb_drizzle_con_query_add(VALUE self, VALUE query_str)
 
 }
 
+VALUE rb_drizzle_con_clone(VALUE self)
+{
+    net_drizzle_con_st *context;
+    net_drizzle_con_st *copy;
+    Data_Get_Struct(self, net_drizzle_con_st, context);
+    VALUE mNet = rb_const_get(rb_cObject, rb_intern("Net")); 
+    VALUE cDrizzle = rb_const_get(mNet, rb_intern("Drizzle")); 
+    VALUE cConnection = rb_const_get(cDrizzle, rb_intern("Connection"));
+
+    VALUE rb_query = rb_funcall(cConnection, rb_intern("allocate"), 0);
+    Data_Get_Struct(rb_query, net_drizzle_con_st, copy);
+
+    if ( ( copy->con = drizzle_con_clone(context->con->drizzle, NULL, context->con) ) == NULL ) {
+        rb_sys_fail("clone failed");
+    }
+
+    return rb_query;
+}
+
 static void rb_drizzle_query_free(net_drizzle_query_st *query)
 {
     if ( query->query != NULL ) {
@@ -282,6 +301,7 @@ void Init_drizzle()
     rb_define_method(cConnection, "port", rb_drizzle_con_port, 0);
     rb_define_method(cConnection, "set_tcp", rb_drizzle_con_set_tcp, 2);
     rb_define_method(cConnection, "query_add", rb_drizzle_con_query_add, 1);
+    rb_define_method(cConnection, "clone", rb_drizzle_con_clone, 0);
 
     VALUE mOptions = rb_define_module_under(cConnection, "Options");
     rb_define_const(mOptions, "NONE", INT2FIX(DRIZZLE_CON_NONE));
