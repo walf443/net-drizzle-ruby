@@ -14,17 +14,14 @@ ruby binding for libdrizzle.
     querys = []
     2.times do |c|
         10.times do |i|
-            con = con1.clone
-            querys << con.query_add("SELECT * FROM tables;")
+            querys << con1.clone.query_add("SELECT * FROM tables;")
         end
     
         dr.query_run_all
         querys.each do |q|
-    
             p q
-            dr.query_run_all
             if q.error_code != 0
-                warn q.error_code.inspect
+                p q.error_code.inspect
             end
             while row = q.row_next
                 p row
